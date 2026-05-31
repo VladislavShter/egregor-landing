@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Sovereign Ecosystem — Egregor · SovereignWeb3 Browser · Sovereign</title>
+<meta name="description" content="Three sovereignty tools by Vladislav Shter: Egregor multi-AI consilium, the DNS-less SovereignWeb3 Browser, and Sovereign on-device data protection.">
+<meta property="og:title" content="The Sovereign Ecosystem">
+<meta property="og:description" content="You are a subject, not a function. Your AI, your web, your data — on your machine.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-dark: #030303;
+    --surface: rgba(15, 15, 18, 0.6);
+    --surface-border: rgba(255, 255, 255, 0.1);
+    --text-main: #ffffff;
+    --text-muted: #9999a1;
+
+    /* Default theme = Egregor (juicy lime-green) */
+    --theme-color: #9EFF00;
+    --theme-glow: rgba(158, 255, 0, 0.35);
+    --theme-gradient: linear-gradient(135deg, #9EFF00, #00E676);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; background: var(--bg-dark); }
+  body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* --- CLEAN, SHARP BACKGROUND --- */
+  .bg-photo { display: none; }
+  .bg-mesh {
+    position: fixed; inset: 0; z-index: 0;
+    background: radial-gradient(circle at 20% 25%, var(--theme-glow), transparent 45%),
+                radial-gradient(circle at 82% 75%, var(--theme-glow), transparent 45%);
+    filter: blur(80px); pointer-events: none;
+    transition: background 1s ease;
+    animation: pulse-bg 18s ease-in-out infinite alternate;
+  }
+  @keyframes pulse-bg {
+    0% { transform: scale(1); opacity: 0.55; }
+    100% { transform: scale(1.08); opacity: 0.8; }
+  }
+  .noise-overlay { display: none; }
+
+  .container { position: relative; z-index: 10; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+  /* Language switch — top left */
+  .lang-switch {
+    position: fixed; top: 28px; left: 28px; z-index: 200;
+    display: flex; gap: 4px; padding: 5px;
+    background: rgba(5,5,5,0.7); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+    border: 1px solid var(--surface-border); border-radius: 100px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+  }
+  .lang-btn {
+    background: transparent; border: none; color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; letter-spacing: 1px;
+    padding: 8px 14px; border-radius: 100px; cursor: pointer; transition: all 0.3s;
+  }
+  .lang-btn:hover { color: #fff; }
+  .lang-btn.active { background: var(--theme-color); color: #000; box-shadow: 0 0 15px var(--theme-glow); }
+  @media (max-width: 768px) {
+    .lang-switch { top: auto; bottom: 20px; left: 50%; transform: translateX(-50%); }
+  }
+
+  /* Navigation */
+  nav {
+    position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+    background: rgba(5, 5, 5, 0.7);
+    backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+    border: 1px solid var(--surface-border);
+    border-radius: 100px; padding: 6px; z-index: 100;
+    display: flex; gap: 4px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1);
+  }
+  .nav-btn {
+    background: transparent; border: none; color: var(--text-muted);
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;
+    padding: 12px 28px; border-radius: 100px; cursor: pointer; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    white-space: nowrap;
+  }
+  .nav-btn:hover { color: var(--text-main); }
+  .nav-btn.active {
+    background: rgba(255,255,255,0.05);
+    color: var(--text-main); border: 1px solid var(--theme-color);
+    box-shadow: 0 0 20px var(--theme-glow), inset 0 1px 0 rgba(255,255,255,0.2);
+    text-shadow: 0 0 10px rgba(255,255,255,0.5);
+  }
+
+  .view { display: none; opacity: 0; padding-top: 160px; padding-bottom: 120px; }
+  .view.active { display: block; animation: fadeScale 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  @keyframes fadeScale {
+    from { opacity: 0; transform: translateY(30px) scale(0.97); filter: blur(10px); }
+    to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
+
+  .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+  .reveal.active { opacity: 1; transform: translateY(0); }
+
+  /* Typography */
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;
+    padding: 8px 20px; border-radius: 100px; border: 1px solid var(--theme-color);
+    background: rgba(0,0,0,0.6); color: var(--text-main);
+    box-shadow: 0 0 20px var(--theme-glow), inset 0 0 10px var(--theme-glow); margin-bottom: 32px;
+    backdrop-filter: blur(10px);
+  }
+  .badge::before { content: ''; width: 8px; height: 8px; background: var(--theme-color); border-radius: 50%; box-shadow: 0 0 15px var(--theme-color); animation: pulse-dot 1.5s infinite; }
+  @keyframes pulse-dot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.5; } }
+
+  h1 {
+    font-family: 'Syne', sans-serif; font-weight: 800;
+    font-size: clamp(48px, 8vw, 100px); line-height: 1.05;
+    letter-spacing: -0.03em; margin-bottom: 32px;
+    color: #fff; text-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  }
+  h1 span {
+    background: var(--theme-gradient); background-size: 200% auto;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: text-gradient 4s linear infinite;
+    filter: drop-shadow(0 0 35px var(--theme-glow)) drop-shadow(0 0 12px var(--theme-glow));
+  }
+  @keyframes text-gradient { to { background-position: 200% center; } }
+
+  .lead-text {
+    font-size: clamp(18px, 2vw, 24px); color: var(--text-muted); font-weight: 400;
+    max-width: 820px; margin: 0 0 56px; line-height: 1.6; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  }
+  .lead-text b { color: #fff; font-weight: 600; }
+
+  /* Buttons */
+  .btn-group { display: flex; gap: 20px; flex-wrap: wrap; }
+  .btn {
+    position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px; text-transform: uppercase; letter-spacing: 1px;
+    padding: 20px 48px; border-radius: 12px; text-decoration: none; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer; border: none; z-index: 1;
+  }
+  .btn-primary { background: #fff; color: #000; box-shadow: 0 0 0 rgba(255,255,255,0); }
+  .btn-primary:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 20px 40px rgba(255,255,255,0.25), 0 0 20px #fff; }
+  .btn-ghost { background: rgba(20,20,25,0.4); color: var(--text-main); border: 1px solid var(--surface-border); backdrop-filter: blur(20px); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.1); border-color: #fff; transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+
+  .section-title {
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(36px, 5vw, 56px);
+    margin: 100px 0 56px; letter-spacing: -0.02em; text-shadow: 0 10px 20px rgba(0,0,0,0.8);
+  }
+  .section-title span { color: var(--theme-color); text-shadow: 0 0 25px var(--theme-glow), 0 0 8px var(--theme-glow); }
+
+  /* --- INTERACTIVE BENTO GRID --- */
+  .bento-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 80px; }
+  .bento-card {
+    background: var(--surface);
+    border: 1px solid var(--surface-border); border-radius: 24px;
+    padding: 48px 40px; position: relative; overflow: hidden;
+    display: flex; flex-direction: column; justify-content: space-between;
+    backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+    box-shadow: 0 40px 80px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: transform 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+  }
+  /* mouse-follow light: SCREEN blend for clean color on dark bg */
+  .bento-card::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), var(--theme-color), transparent 40%);
+    opacity: 0; transition: opacity 0.4s; pointer-events: none; z-index: 1;
+    mix-blend-mode: screen; filter: blur(20px);
+  }
+  .bento-card:hover::before { opacity: 0.15; }
+  /* mouse-follow border glow */
+  .bento-card::after {
+    content: ""; position: absolute; inset: 0; border-radius: 24px; padding: 2px;
+    background: radial-gradient(500px circle at var(--mouse-x) var(--mouse-y), var(--theme-color), transparent 40%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    opacity: 0; transition: opacity 0.4s; pointer-events: none; z-index: 5;
+  }
+  .bento-card:hover::after { opacity: 1; }
+  .bento-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.2); box-shadow: 0 50px 90px rgba(0,0,0,0.8), 0 0 40px var(--theme-glow), inset 0 1px 0 rgba(255,255,255,0.08); }
+  .bento-card.large { grid-column: span 2; }
+  @media (max-width: 900px) {
+    .bento-grid { grid-template-columns: 1fr; }
+    .bento-card.large { grid-column: span 1; }
+  }
+  .bento-card .content-wrapper { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; }
+  .bento-card .mono-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--theme-color);
+    margin-bottom: 32px; letter-spacing: 2px; text-shadow: 0 0 10px var(--theme-glow);
+  }
+  .bento-card h3 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 16px; color: #fff; }
+  .bento-card p { color: var(--text-muted); font-size: 17px; line-height: 1.7; flex-grow: 1; font-weight: 400; }
+
+  /* ANIMATED NEON PRICING FRAMES */
+  .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 32px; }
+  .price-card {
+    position: relative; border-radius: 28px; overflow: hidden; padding: 2px;
+    background: var(--surface-border); box-shadow: 0 40px 80px rgba(0,0,0,0.8);
+  }
+  .price-card.premium::before {
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: conic-gradient(transparent, transparent, transparent, var(--theme-color));
+    animation: rotate 3s linear infinite;
+  }
+  @keyframes rotate { 100% { transform: rotate(360deg); } }
+  .price-inner {
+    background: rgba(10, 10, 12, 0.9); border-radius: 26px; padding: 56px 48px; height: 100%; position: relative; z-index: 10;
+    display: flex; flex-direction: column; backdrop-filter: blur(40px);
+  }
+  .p-name { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 24px; }
+  .p-price { font-family: 'Syne', sans-serif; font-size: 72px; font-weight: 800; line-height: 1; margin-bottom: 8px; color: #fff; }
+  .p-price span { color: var(--theme-color); font-size: 36px; vertical-align: top; margin-right: 6px; }
+  .p-sub { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text-muted); margin-bottom: 40px; border-bottom: 1px solid var(--surface-border); padding-bottom: 40px; }
+  .p-list { list-style: none; flex-grow: 1; }
+  .p-list li { margin-bottom: 20px; color: #d0d0d0; display: flex; align-items: flex-start; gap: 16px; font-size: 16px; }
+  .p-list li::before { content: '✦'; color: var(--theme-color); font-size: 16px; text-shadow: 0 0 10px var(--theme-color); }
+  .p-more { display:inline-flex; align-items:center; justify-content:center; margin-top:32px; padding:14px 24px; border-radius:12px;
+    font-family:'Syne',sans-serif; font-weight:800; font-size:14px; text-transform:uppercase; letter-spacing:1px; text-decoration:none;
+    color:var(--theme-color); border:1px solid var(--theme-color); background:transparent; transition:all .3s; }
+  .p-more:hover { background:var(--theme-color); color:#000; box-shadow:0 0 20px var(--theme-glow); }
+
+  /* TERMINAL / BUY BOX */
+  .terminal-box {
+    margin-top: 100px; background: rgba(5,5,5,0.75); border: 1px solid var(--surface-border);
+    border-radius: 28px; padding: 56px; backdrop-filter: blur(40px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 60px 120px -20px rgba(0,0,0,0.9);
+    position: relative; overflow: hidden;
+  }
+  .terminal-box::after {
+    content: ''; position: absolute; top: -100%; left: 0; right: 0; height: 150px;
+    background: linear-gradient(to bottom, transparent, var(--theme-glow), transparent);
+    animation: scanline 6s linear infinite; pointer-events: none; opacity: 0.3; mix-blend-mode: screen;
+  }
+  @keyframes scanline { 0% { top: -100%; } 100% { top: 200%; } }
+  .term-header { font-family: 'JetBrains Mono', monospace; color: #fff; font-size: 14px; font-weight: 700; margin-bottom: 40px; text-transform: uppercase; letter-spacing: 3px; border-bottom: 1px solid var(--surface-border); padding-bottom: 20px; }
+  .step-row { display: flex; gap: 32px; margin-bottom: 40px; align-items: flex-start; position: relative; z-index: 2; }
+  .step-num { font-family: 'Syne', sans-serif; font-size: 40px; font-weight: 800; color: rgba(255,255,255,0.1); line-height: 1; -webkit-text-stroke: 1px rgba(255,255,255,0.3); }
+  .step-text h4 { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 8px; color: #fff; }
+  .step-text p { color: var(--text-muted); font-size: 17px; }
+  .crypto-address {
+    background: #000; border: 1px solid var(--theme-color); border-radius: 16px;
+    padding: 24px 32px; display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 0 30px var(--theme-glow); margin: 32px 0; flex-wrap: wrap; gap: 16px;
+    position: relative; z-index: 2;
+  }
+  .crypto-address code { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: #fff; word-break: break-all; }
+  .net-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--theme-color); text-shadow: 0 0 10px var(--theme-glow); margin: 28px 0 8px; text-transform: uppercase; }
+  .copy-btn {
+    background: var(--theme-color); color: #000; border: none; font-family: 'Syne', sans-serif;
+    font-weight: 800; text-transform: uppercase; padding: 14px 28px; border-radius: 10px; cursor: pointer; transition: 0.3s;
+    box-shadow: 0 0 20px var(--theme-glow);
+  }
+  .copy-btn:hover { transform: scale(1.05); filter: brightness(1.2); }
+
+  /* MEDIA (levitation + photoreal) */
+  .media-showcase {
+    border-radius: 32px; overflow: hidden; border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0 60px 120px -20px rgba(0,0,0,1), 0 0 60px var(--theme-glow); margin: 40px 0;
+    position: relative; animation: float-media 6s ease-in-out infinite; background:#000;
+  }
+  @keyframes float-media {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-15px) rotate(0.5deg); }
+  }
+  .media-showcase::after {
+    content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2); pointer-events: none; border-radius: 32px;
+  }
+  .media-showcase img, .media-showcase video { width: 100%; height: auto; display: block; }
+  .yt-wrap { position: relative; width: 100%; padding-top: 56.25%; background:#000; }
+  .yt-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+  .media-cap { font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--text-muted); text-align:center; letter-spacing:1px; margin-top:-20px; margin-bottom:40px; }
+
+  .philosophy { text-align: center; margin-top: 160px; padding: 100px 0; border-top: 1px solid var(--surface-border); }
+  .philosophy h2 { font-family: 'Syne', sans-serif; font-size: clamp(40px, 6vw, 80px); font-weight: 800; letter-spacing: -0.02em; color: #fff; text-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+  .philosophy span { color: var(--theme-color); font-style: italic; }
+
+  @media (max-width: 768px) {
+    nav { width: 92%; justify-content: flex-start; overflow-x: auto; border-radius: 20px; padding: 8px; }
+    .nav-btn { font-size: 12px; padding: 12px 18px; white-space: nowrap; }
+    .btn-group { flex-direction: column; }
+    .btn { width: 100%; }
+    .bento-card { padding: 32px 24px; }
+    .terminal-box { padding: 32px 24px; }
+    .price-inner { padding: 40px 28px; }
+    .crypto-address { flex-direction: column; align-items: stretch; text-align: center; padding: 20px; }
+    .crypto-address code { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-photo"></div>
+<div class="bg-mesh"></div>
+<div class="noise-overlay"></div>
+
+<div class="lang-switch">
+  <button class="lang-btn" data-lang="en">EN</button>
+  <button class="lang-btn active" data-lang="ru">RU</button>
+</div>
+
+<nav>
+  <button class="nav-btn active" data-target="egregor" data-en="Egregor" data-ru="Эгрегор">Egregor</button>
+  <button class="nav-btn" data-target="browser" data-en="SovereignWeb3 Browser" data-ru="SovereignWeb3 Browser">SovereignWeb3 Browser</button>
+  <button class="nav-btn" data-target="sovereign" data-en="Sovereign" data-ru="Sovereign">Sovereign</button>
+</nav>
+
+<!-- ===================== EGREGOR ===================== -->
+<section class="view active" id="egregor">
+  <div class="container">
+    <div class="reveal"><span class="badge"><span class="i18n" data-en="Multi-AI Consilium · On Your Machine" data-ru="Консилиум ИИ · На вашем компьютере">Multi-AI Consilium · On Your Machine</span></span></div>
+    <h1 class="reveal"><span class="i18n" data-en="The first AI <span>consilium</span> that runs on your own computer." data-ru="Первый ИИ-<span>консилиум</span>, работающий на вашем компьютере.">The first AI <span>consilium</span> that runs on your own computer.</span></h1>
+    <p class="lead-text reveal"><span class="i18n" data-en="Egregor orchestrates up to <b>12+ frontier AI models</b> into one collaborative council — they debate, criticise and refine each other's answers. <b>Your data never leaves your machine.</b>" data-ru="Эгрегор объединяет до <b>12+ передовых моделей ИИ</b> в единый совет — они спорят, критикуют и улучшают ответы друг друга. <b>Ваши данные никогда не покидают ваш компьютер.</b>">Egregor orchestrates up to <b>12+ frontier AI models</b> into one collaborative council — they debate, criticise and refine each other's answers. <b>Your data never leaves your machine.</b></span></p>
+    <div class="btn-group reveal">
+      <a href="#buy-egregor" class="btn btn-primary"><span class="i18n" data-en="Get Egregor — from $199" data-ru="Купить Эгрегор — от $199">Get Egregor — from $199</span></a>
+      <a href="#how-egregor" class="btn btn-ghost"><span class="i18n" data-en="How it works" data-ru="Как это работает">How it works</span></a>
+      <a href="https://github.com/VladislavShter/Egregor" target="_blank" rel="noopener" class="btn btn-ghost">GitHub</a>
+    </div>
+
+    <!-- LIVE DEMO -->
+    <h2 class="section-title reveal"><span class="i18n" data-en="See it <span>in action</span>" data-ru="Посмотрите <span>в действии</span>">See it <span>in action</span></span></h2>
+    <div class="media-showcase reveal">
+      <img src="./1.gif" alt="Egregor interface in motion" loading="lazy">
+    </div>
+    <div class="media-showcase reveal">
+      <video controls preload="metadata" playsinline poster="./demo-poster.jpg">
+        <source src="./Egregor1.mp4" type="video/mp4">
+        Your browser does not support embedded video.
+      </video>
+    </div>
+    <p class="media-cap reveal"><span class="i18n" data-en="▶ Full walkthrough — real machine, no mockups · click to play" data-ru="▶ Полное демо — реальная работа, без макетов · нажмите для воспроизведения">▶ Full walkthrough — real machine, no mockups · click to play</span></p>
+
+    <!-- WHY -->
+    <h2 class="section-title reveal" id="how-egregor"><span class="i18n" data-en="Your prompts are <span>not a gift.</span>" data-ru="Ваши запросы — <span>не подарок.</span>">Your prompts are <span>not a gift.</span></span></h2>
+    <div class="bento-grid">
+      <div class="bento-card large reveal">
+        <div class="content-wrapper">
+          <div class="mono-label"><span class="i18n" data-en="[ DATA SOVEREIGNTY ]" data-ru="[ СУВЕРЕНИТЕТ ДАННЫХ ]">[ DATA SOVEREIGNTY ]</span></div>
+          <h3><span class="i18n" data-en="The full picture stays with you" data-ru="Полная картина остаётся у вас">The full picture stays with you</span></h3>
+          <p><span class="i18n" data-en="Every prompt you send to a cloud AI becomes their property — your business plan, your code, your strategy. Egregor flips the table: your project is created and stays inside Egregor, on your computer. Models receive only small, fragmented pieces of context — no single model ever sees the whole. Only you do." data-ru="Каждый запрос к облачному ИИ становится их собственностью — ваш бизнес-план, ваш код, ваша стратегия. Эгрегор переворачивает игру: проект создаётся и хранится внутри Эгрегора, на вашем компьютере. Модели получают лишь небольшие фрагменты контекста — ни одна модель не видит целого. Только вы.">Every prompt you send to a cloud AI becomes their property — your business plan, your code, your strategy. Egregor flips the table: your project is created and stays inside Egregor, on your computer. Models receive only small, fragmented pieces of context — no single model ever sees the whole. Only you do.</span></p>
+        </div>
+      </div>
+      <div class="bento-card reveal">
+        <div class="content-wrapper">
+          <div class="mono-label"><span class="i18n" data-en="[ LIVE CONSILIUM ]" data-ru="[ ЖИВОЙ КОНСИЛИУМ ]">[ LIVE CONSILIUM ]</span></div>
+          <h3><span class="i18n" data-en="Real multi-AI debate" data-ru="Настоящий спор нескольких ИИ">Real multi-AI debate</span></h3>
+          <p><span class="i18n" data-en="Five models answer in assigned roles, then read each other, criticise and supplement across multiple rounds. A Moderator delivers the final synthesis — structured deliberation, not glued-together API calls." data-ru="Пять моделей отвечают в назначенных ролях, затем читают друг друга, критикуют и дополняют в несколько раундов. Модератор выдаёт финальный синтез — структурированное обсуждение, а не склейка вызовов API.">Five models answer in assigned roles, then read each other, criticise and supplement across multiple rounds. A Moderator delivers the final synthesis — structured deliberation, not glued-together API calls.</span></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- FEATURES -->
+    <h2 class="section-title reveal"><span class="i18n" data-en="Not one AI you hope is right — <span>a team that checks itself.</span>" data-ru="Не один ИИ, на который вы надеетесь, — <span>а команда, что проверяет сама себя.</span>">Not one AI you hope is right — <span>a team that checks itself.</span></span></h2>
+    <div class="bento-grid">
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ CODE REVIEW ]" data-ru="[ РЕВЬЮ КОДА ]">[ CODE REVIEW ]</span></div>
+        <h3><span class="i18n" data-en="Smart-contract audit ~$0.40" data-ru="Аудит смарт-контракта ~$0.40">Smart-contract audit ~$0.40</span></h3>
+        <p><span class="i18n" data-en="A 5-step pipeline of specialist models: reasoning, security, alternative rewrite, comparison, final verdict — with a critical / recommended / optional report." data-ru="Конвейер из 5 шагов специализированных моделей: логика, безопасность, альтернативная версия, сравнение, финальный вердикт — с отчётом критично / рекомендуется / опционально.">A 5-step pipeline of specialist models: reasoning, security, alternative rewrite, comparison, final verdict — with a critical / recommended / optional report.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ ANTI-GROUPTHINK ]" data-ru="[ АНТИ-ГРУППОВОЕ МЫШЛЕНИЕ ]">[ ANTI-GROUPTHINK ]</span></div>
+        <h3><span class="i18n" data-en="Defence against the echo chamber" data-ru="Защита от эхо-камеры">Defence against the echo chamber</span></h3>
+        <p><span class="i18n" data-en="A blind first round of independent opinions, plus a rotating Devil's Advocate that attacks the emerging consensus on every round." data-ru="Слепой первый раунд независимых мнений плюс сменный «адвокат дьявола», атакующий формирующийся консенсус в каждом раунде.">A blind first round of independent opinions, plus a rotating Devil's Advocate that attacks the emerging consensus on every round.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ BIG PROJECT ]" data-ru="[ БОЛЬШОЙ ПРОЕКТ ]">[ BIG PROJECT ]</span></div>
+        <h3><span class="i18n" data-en="Whole-codebase analysis" data-ru="Анализ всей кодовой базы">Whole-codebase analysis</span></h3>
+        <p><span class="i18n" data-en="Drop a ZIP of 500 files. Egregor reads each in full, builds the dependency graph, writes an architecture map, and RAG-searches the relevant code per question." data-ru="Загрузите ZIP из 500 файлов. Эгрегор читает каждый целиком, строит граф зависимостей, пишет карту архитектуры и ищет нужный код через RAG под каждый вопрос.">Drop a ZIP of 500 files. Egregor reads each in full, builds the dependency graph, writes an architecture map, and RAG-searches the relevant code per question.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ COMPRESSION + CACHE ]" data-ru="[ СЖАТИЕ + КЭШ ]">[ COMPRESSION + CACHE ]</span></div>
+        <h3><span class="i18n" data-en="10–20× token savings" data-ru="Экономия токенов в 10–20 раз">10–20× token savings</span></h3>
+        <p><span class="i18n" data-en="A living Project Dossier compresses history from 100k to ~5k tokens per request. A semantic cache answers repeated questions with zero API calls." data-ru="Живое «Досье проекта» сжимает историю со 100k до ~5k токенов на запрос. Семантический кэш отвечает на повторные вопросы без обращений к API.">A living Project Dossier compresses history from 100k to ~5k tokens per request. A semantic cache answers repeated questions with zero API calls.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ CONFIDENCE MAP ]" data-ru="[ КАРТА УВЕРЕННОСТИ ]">[ CONFIDENCE MAP ]</span></div>
+        <h3><span class="i18n" data-en="Every verdict, scored 1–5" data-ru="Каждый вердикт оценён по шкале 1–5">Every verdict, scored 1–5</span></h3>
+        <p><span class="i18n" data-en="When the models genuinely don't agree, Egregor tells you — instead of a single AI confidently making something up. Full agreement, compromise, or no unified conclusion: you always see which." data-ru="Когда модели по-настоящему не согласны, Эгрегор говорит вам об этом — вместо того чтобы один ИИ уверенно что-то выдумывал. Полное согласие, компромисс или отсутствие единого вывода: вы всегда видите, что именно.">When the models genuinely don't agree, Egregor tells you — instead of a single AI confidently making something up. Full agreement, compromise, or no unified conclusion: you always see which.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ 6 LANGUAGES · 29 PRESETS ]" data-ru="[ 6 ЯЗЫКОВ · 29 ПРЕСЕТОВ ]">[ 6 LANGUAGES · 29 PRESETS ]</span></div>
+        <h3><span class="i18n" data-en="Ready-made expert councils" data-ru="Готовые экспертные советы">Ready-made expert councils</span></h3>
+        <p><span class="i18n" data-en="One click loads a council for audits, writing, legal review, strategy, research and 25 more. Native interface in RU · EN · DE · ES · ZH · AR." data-ru="Один клик загружает совет для аудита, письма, юридической проверки, стратегии, исследований и ещё 25 задач. Родной интерфейс на RU · EN · DE · ES · ZH · AR.">One click loads a council for audits, writing, legal review, strategy, research and 25 more. Native interface in RU · EN · DE · ES · ZH · AR.</span></p>
+      </div></div>
+    </div>
+
+    <!-- PRICING -->
+    <h2 class="section-title reveal" id="buy-egregor"><span class="i18n" data-en="Two editions. <span>One-time. No subscription.</span>" data-ru="Две версии. <span>Разовая оплата. Без подписки.</span>">Two editions. <span>One-time. No subscription.</span></span></h2>
+    <div class="pricing-grid">
+      <div class="price-card reveal"><div class="price-inner">
+        <div class="p-name">Pro</div>
+        <div class="p-price"><span>$</span>199</div>
+        <div class="p-sub"><span class="i18n" data-en="one-time license · lifetime use · for individuals" data-ru="разовая лицензия · навсегда · для частных лиц">one-time license · lifetime use · for individuals</span></div>
+        <ul class="p-list">
+          <li><span class="i18n" data-en="Multi-AI Consilium with role system (up to 5 models)" data-ru="Консилиум ИИ с системой ролей (до 5 моделей)">Multi-AI Consilium with role system (up to 5 models)</span></li>
+          <li><span class="i18n" data-en="Live debate + Anti-Groupthink engine" data-ru="Живой спор + движок анти-группового мышления">Live debate + Anti-Groupthink engine</span></li>
+          <li><span class="i18n" data-en="Confidence Map (1–5) on every claim" data-ru="Карта уверенности (1–5) на каждое утверждение">Confidence Map (1–5) on every claim</span></li>
+          <li><span class="i18n" data-en="Context Compression + Semantic Cache" data-ru="Сжатие контекста + семантический кэш">Context Compression + Semantic Cache</span></li>
+          <li><span class="i18n" data-en="6 languages · 29 ready-made presets" data-ru="6 языков · 29 готовых пресетов">6 languages · 29 ready-made presets</span></li>
+          <li><span class="i18n" data-en="Local persistent memory (SQLite + vector DB)" data-ru="Локальная постоянная память (SQLite + векторная БД)">Local persistent memory (SQLite + vector DB)</span></li>
+          <li><span class="i18n" data-en="Free updates forever" data-ru="Бесплатные обновления навсегда">Free updates forever</span></li>
+        </ul>
+        <a href="https://github.com/VladislavShter/Egregor" target="_blank" rel="noopener" class="p-more"><span class="i18n" data-en="Learn more" data-ru="Более подробно">Learn more</span></a>
+      </div></div>
+      <div class="price-card premium reveal"><div class="price-inner">
+        <div class="p-name">Ultra</div>
+        <div class="p-price"><span>$</span>399</div>
+        <div class="p-sub"><span class="i18n" data-en="one-time license · lifetime use · for professionals &amp; teams" data-ru="разовая лицензия · навсегда · для профессионалов и команд">one-time license · lifetime use · for professionals & teams</span></div>
+        <ul class="p-list">
+          <li><span class="i18n" data-en="<b style=&quot;color:#fff&quot;>Everything in Pro, plus:</b>" data-ru="<b style=&quot;color:#fff&quot;>Всё из Pro, плюс:</b>"><b style="color:#fff">Everything in Pro, plus:</b></span></li>
+          <li><span class="i18n" data-en="Full Consilium — 12+ models across 12 roles in parallel" data-ru="Полный консилиум — 12+ моделей в 12 ролях параллельно">Full Consilium — 12+ models across 12 roles in parallel</span></li>
+          <li><span class="i18n" data-en="Code Review pipeline (DeepSeek→Sonnet→Qwen→Opus smart-contract audit)" data-ru="Конвейер ревью кода (аудит смарт-контракта DeepSeek→Sonnet→Qwen→Opus)">Code Review pipeline (DeepSeek→Sonnet→Qwen→Opus smart-contract audit)</span></li>
+          <li><span class="i18n" data-en="Big Project mode — whole-codebase RAG over 500+ files" data-ru="Режим «Большой проект» — RAG по всей базе из 500+ файлов">Big Project mode — whole-codebase RAG over 500+ files</span></li>
+          <li><span class="i18n" data-en="Big Text mode — read &amp; analyse full books (Gemini 1M context)" data-ru="Режим «Большой текст» — чтение и анализ целых книг (контекст Gemini 1M)">Big Text mode — read & analyse full books (Gemini 1M context)</span></li>
+          <li><span class="i18n" data-en="Custom OpenRouter model catalogue (bring any model)" data-ru="Каталог моделей OpenRouter (подключите любую модель)">Custom OpenRouter model catalogue (bring any model)</span></li>
+          <li><span class="i18n" data-en="AI Debate Arena, Devil's Advocate &amp; Oracle modes" data-ru="Арена дебатов ИИ, режимы «Адвокат дьявола» и «Оракул»">AI Debate Arena, Devil's Advocate &amp; Oracle modes</span></li>
+          <li><span class="i18n" data-en="3D Knowledge Graph + Soul Document" data-ru="3D-граф знаний + «Документ души»">3D Knowledge Graph + Soul Document</span></li>
+          <li><span class="i18n" data-en="Archive ingestion (ZIP / RAR / 7z) as live context" data-ru="Загрузка архивов (ZIP / RAR / 7z) как живой контекст">Archive ingestion (ZIP / RAR / 7z) as live context</span></li>
+          <li><span class="i18n" data-en="Priority founder support &amp; early access to new modules" data-ru="Приоритетная поддержка от автора и ранний доступ к новым модулям">Priority founder support &amp; early access to new modules</span></li>
+        </ul>
+        <a href="https://github.com/VladislavShter/Egregor" target="_blank" rel="noopener" class="p-more"><span class="i18n" data-en="Learn more" data-ru="Более подробно">Learn more</span></a>
+      </div></div>
+    </div>
+
+    <!-- BUY TERMINAL -->
+    <div class="terminal-box reveal">
+      <div class="term-header"><span class="i18n" data-en="// SECURE PURCHASE — PAY IN CRYPTO" data-ru="// БЕЗОПАСНАЯ ПОКУПКА — ОПЛАТА КРИПТОЙ">// SECURE PURCHASE — PAY IN CRYPTO</span></div>
+      <div class="step-row">
+        <div class="step-num">01</div>
+        <div class="step-text"><h4><span class="i18n" data-en="Send your edition's amount in USDT" data-ru="Отправьте сумму вашей версии в USDT">Send your edition's amount in USDT</span></h4><p><span class="i18n" data-en="$199 for Pro or $399 for Ultra — in USDT, on <b style=&quot;color:#fff&quot;>either Ethereum (ERC-20)</b> or <b style=&quot;color:#fff&quot;>Tron (TRC-20)</b>. Use the matching address below — never mix networks." data-ru="$199 за Pro или $399 за Ultra — в USDT, в <b style=&quot;color:#fff&quot;>сети Ethereum (ERC-20)</b> или <b style=&quot;color:#fff&quot;>Tron (TRC-20)</b>. Используйте соответствующий адрес ниже — не путайте сети.">$199 for Pro or $399 for Ultra — in USDT, on <b style="color:#fff">either Ethereum (ERC-20)</b> or <b style="color:#fff">Tron (TRC-20)</b>. Use the matching address below — never mix networks.</span></p></div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">02</div>
+        <div class="step-text"><h4><span class="i18n" data-en="Email your transaction hash" data-ru="Отправьте хэш транзакции на почту">Email your transaction hash</span></h4><p><span class="i18n" data-en="Send your transaction hash to the address below. <b style=&quot;color:#fff&quot;>You must put EGREGOR in the email subject</b>, or the message may be filtered as spam." data-ru="Отправьте хэш транзакции на адрес ниже. <b style=&quot;color:#fff&quot;>Обязательно укажите EGREGOR в теме письма</b>, иначе оно может попасть в спам.">Send your transaction hash to the address below. <b style="color:#fff">You must put EGREGOR in the email subject</b>, or the message may be filtered as spam.</span></p></div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">03</div>
+        <div class="step-text"><h4><span class="i18n" data-en="Receive your license key" data-ru="Получите ключ лицензии">Receive your license key</span></h4><p><span class="i18n" data-en="Within minutes you get your key, the download link and the manual." data-ru="В течение нескольких минут вы получите ключ, ссылку на скачивание и руководство.">Within minutes you get your key, the download link and the manual.</span></p></div>
+      </div>
+      <div class="net-label">USDT · Ethereum (ERC-20) · address starts with 0x</div>
+      <div class="crypto-address">
+        <code id="wallet-erc20">0x55849d86eC8b4bfb084c6dfe27d6E8996caF5573</code>
+        <button class="copy-btn" onclick="copyToClipboard('wallet-erc20', this)">Copy</button>
+      </div>
+      <div class="net-label">USDT · Tron (TRC-20) · address starts with T</div>
+      <div class="crypto-address">
+        <code id="wallet-trc20">TAy8SKvHHY8MFqPbNvhezyiFd9d1icuF33</code>
+        <button class="copy-btn" onclick="copyToClipboard('wallet-trc20', this)">Copy</button>
+      </div>
+      <div class="net-label">Email — send your transaction hash here</div>
+      <div class="crypto-address">
+        <code id="email-egregor">wadyas@gmail.com</code>
+        <button class="copy-btn" onclick="copyToClipboard('email-egregor', this)">Copy</button>
+      </div>
+      <div class="btn-group">
+        <a href="mailto:wadyas@gmail.com?subject=EGREGOR" class="btn btn-primary"><span class="i18n" data-en="Email transaction hash →" data-ru="Отправить хэш транзакции →">Email transaction hash →</span></a>
+      </div>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text-muted);margin-top:24px;line-height:1.8">
+        // Send only to the address that matches your network — ERC-20 to the 0x… address, TRC-20 to the T… address.<br>
+        // Double-check the network — crypto transfers are irreversible.<br>
+        // Contact: wadyas@gmail.com · support@sovereignbank.pw<br>
+        // Subject line must be "EGREGOR" or your email may go to spam.
+      </p>
+
+      <div style="margin-top:32px;padding-top:28px;border-top:1px solid var(--surface-border)">
+        <div class="term-header" style="margin-bottom:20px;border:none;padding:0"><span class="i18n" data-en="// HOW TO FIND &amp; SEND YOUR TRANSACTION HASH" data-ru="// КАК НАЙТИ И ОТПРАВИТЬ ХЭШ ТРАНЗАКЦИИ">// HOW TO FIND &amp; SEND YOUR TRANSACTION HASH</span></div>
+        <p style="color:var(--text-muted);font-size:15px;line-height:1.8">
+          <span class="i18n" data-en="A transaction hash (also called &quot;TxID&quot;) is the unique receipt of your payment — a long string of letters and numbers. After you send the USDT, open your wallet, tap the transaction in your history, and copy its hash / TxID (in MetaMask: tap the transaction → &quot;View on block explorer&quot; or the copy icon next to the hash). Paste that hash into your email to us. We verify it on-chain and send your license key within minutes." data-ru="Хэш транзакции (он же «TxID») — это уникальный чек вашего платежа, длинная строка из букв и цифр. После отправки USDT откройте кошелёк, нажмите на эту транзакцию в истории и скопируйте её хэш / TxID (в MetaMask: нажмите на транзакцию → «Посмотреть в обозревателе блоков» или иконка копирования рядом с хэшем). Вставьте этот хэш в письмо нам. Мы проверим его в блокчейне и пришлём ключ лицензии в течение нескольких минут.">A transaction hash (also called "TxID") is the unique receipt of your payment — a long string of letters and numbers. After you send the USDT, open your wallet, tap the transaction in your history, and copy its hash / TxID (in MetaMask: tap the transaction → "View on block explorer" or the copy icon next to the hash). Paste that hash into your email to us. We verify it on-chain and send your license key within minutes.</span>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SOVEREIGNWEB3 BROWSER ===================== -->
+<section class="view" id="browser">
+  <div class="container">
+    <div class="reveal"><span class="badge"><span class="i18n" data-en="Alpha · Infrastructure Phase" data-ru="Альфа · Фаза инфраструктуры">Alpha · Infrastructure Phase</span></span></div>
+    <h1 class="reveal"><span class="i18n" data-en="SovereignWeb3 Browser. The web, rebuilt on <span>mathematical certainty.</span>" data-ru="SovereignWeb3 Browser. Интернет, перестроенный на <span>математической достоверности.</span>">SovereignWeb3 Browser. The web, rebuilt on <span>mathematical certainty.</span></span></h1>
+    <p class="lead-text reveal"><span class="i18n" data-en="Not a Chromium fork. A specialised engine that talks to the blockchain directly — <b>no DNS, no intermediaries, no spoofing.</b> Built on Rust and Tauri 2 for a minimal attack surface." data-ru="Не форк Chromium. Специализированный движок, обращающийся к блокчейну напрямую — <b>без DNS, без посредников, без подмены.</b> Построен на Rust и Tauri 2 для минимальной поверхности атаки.">Not a Chromium fork. A specialised engine that talks to the blockchain directly — <b>no DNS, no intermediaries, no spoofing.</b> Built on Rust and Tauri 2 for a minimal attack surface.</span></p>
+    <div class="btn-group reveal">
+      <a href="mailto:wadyas@gmail.com?subject=SovereignWeb3 Browser" class="btn btn-primary"><span class="i18n" data-en="Join the beta waitlist" data-ru="Записаться в бету">Join the beta waitlist</span></a>
+      <a href="https://github.com/VladislavShter/SovereignWeb3-Browser" target="_blank" rel="noopener" class="btn btn-ghost"><span class="i18n" data-en="View on GitHub" data-ru="Открыть на GitHub">View on GitHub</span></a>
+    </div>
+
+    <h2 class="section-title reveal"><span class="i18n" data-en="DNS is a <span>40-year-old liability.</span>" data-ru="DNS — <span>уязвимость возрастом 40 лет.</span>">DNS is a <span>40-year-old liability.</span></span></h2>
+    <div class="bento-grid">
+      <div class="bento-card large reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ THE PROBLEM ]" data-ru="[ ПРОБЛЕМА ]">[ THE PROBLEM ]</span></div>
+        <h3><span class="i18n" data-en="Phishing isn't blocked — it's made mathematically impossible" data-ru="Фишинг не блокируется — он становится математически невозможным">Phishing isn't blocked — it's made mathematically impossible</span></h3>
+        <p><span class="i18n" data-en="Conventional browsers rely on ICANN-controlled DNS and third-party APIs — vulnerable, censorable, and broken for the era of sovereign finance. SovereignWeb3 interacts with the blockchain directly, at the binary level, eliminating the intermediaries that make censorship and phishing possible in the first place." data-ru="Обычные браузеры зависят от подконтрольного ICANN DNS и сторонних API — уязвимых, цензурируемых и устаревших для эпохи суверенных финансов. SovereignWeb3 работает с блокчейном напрямую, на бинарном уровне, убирая посредников, которые и делают цензуру и фишинг возможными.">Conventional browsers rely on ICANN-controlled DNS and third-party APIs — vulnerable, censorable, and broken for the era of sovereign finance. SovereignWeb3 interacts with the blockchain directly, at the binary level, eliminating the intermediaries that make censorship and phishing possible in the first place.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ DNS-LESS ]" data-ru="[ БЕЗ DNS ]">[ DNS-LESS ]</span></div>
+        <h3><span class="i18n" data-en="Direct on-chain resolution" data-ru="Прямое разрешение через блокчейн">Direct on-chain resolution</span></h3>
+        <p><span class="i18n" data-en="A Rust core calls the Unstoppable Domains registry directly. No DNS lookups, no resolvers to poison, no man in the middle." data-ru="Ядро на Rust обращается к реестру Unstoppable Domains напрямую. Никаких DNS-запросов, никаких резолверов для отравления, никакого посредника.">A Rust core calls the Unstoppable Domains registry directly. No DNS lookups, no resolvers to poison, no man in the middle.</span></p>
+      </div></div>
+    </div>
+
+    <h2 class="section-title reveal"><span class="i18n" data-en="Core <span>architecture.</span>" data-ru="Ключевая <span>архитектура.</span>">Core <span>architecture.</span></span></h2>
+    <div class="bento-grid">
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ LOCAL CRYPTO ]" data-ru="[ ЛОКАЛЬНАЯ КРИПТОГРАФИЯ ]">[ LOCAL CRYPTO ]</span></div>
+        <h3><span class="i18n" data-en="Zero-knowledge namehash" data-ru="Namehash с нулевым разглашением">Zero-knowledge namehash</span></h3>
+        <p><span class="i18n" data-en="Namehash calculation happens locally on your device, so resolution leaks nothing about where you're going." data-ru="Вычисление namehash происходит локально на вашем устройстве, поэтому разрешение адреса ничего не раскрывает о том, куда вы идёте.">Namehash calculation happens locally on your device, so resolution leaks nothing about where you're going.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ IPFS NATIVE ]" data-ru="[ НАТИВНЫЙ IPFS ]">[ IPFS NATIVE ]</span></div>
+        <h3><span class="i18n" data-en="Verified byte-by-byte" data-ru="Проверка байт за байтом">Verified byte-by-byte</span></h3>
+        <p><span class="i18n" data-en="Content is fetched and verified through cryptographic hashes — if a byte is wrong, it doesn't load." data-ru="Контент загружается и проверяется по криптографическим хэшам — если хоть один байт неверен, он не загрузится.">Content is fetched and verified through cryptographic hashes — if a byte is wrong, it doesn't load.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ WALLET BUILT IN ]" data-ru="[ ВСТРОЕННЫЙ КОШЕЛЁК ]">[ WALLET BUILT IN ]</span></div>
+        <h3><span class="i18n" data-en="No extensions needed" data-ru="Без расширений">No extensions needed</span></h3>
+        <p><span class="i18n" data-en="Native EIP-1193 and EIP-6963 support out of the box. Your wallet is part of the engine, not a bolt-on." data-ru="Нативная поддержка EIP-1193 и EIP-6963 из коробки. Кошелёк — часть движка, а не надстройка.">Native EIP-1193 and EIP-6963 support out of the box. Your wallet is part of the engine, not a bolt-on.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ MEMORY SAFE ]" data-ru="[ БЕЗОПАСНАЯ ПАМЯТЬ ]">[ MEMORY SAFE ]</span></div>
+        <h3><span class="i18n" data-en="Tauri 2 + Rust + React" data-ru="Tauri 2 + Rust + React">Tauri 2 + Rust + React</span></h3>
+        <p><span class="i18n" data-en="Built for performance and a minimal attack surface — structurally resistant to DNS spoofing and BGP hijacking." data-ru="Сделан для скорости и минимальной поверхности атаки — структурно устойчив к подмене DNS и перехвату BGP.">Built for performance and a minimal attack surface — structurally resistant to DNS spoofing and BGP hijacking.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ 12+ TLDs ]" data-ru="[ 12+ ДОМЕНОВ ]">[ 12+ TLDs ]</span></div>
+        <h3><span class="i18n" data-en="Universal Web3 support" data-ru="Универсальная поддержка Web3">Universal Web3 support</span></h3>
+        <p><span class="i18n" data-en="Native resolution for .web3 .crypto .eth .polygon .nft and more — plus a live gas tracker, reader mode and precision zoom." data-ru="Нативное разрешение .web3 .crypto .eth .polygon .nft и других — плюс трекер газа в реальном времени, режим чтения и точный зум.">Native resolution for .web3 .crypto .eth .polygon .nft and more — plus a live gas tracker, reader mode and precision zoom.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ ECOSYSTEM PILLAR ]" data-ru="[ ОПОРА ЭКОСИСТЕМЫ ]">[ ECOSYSTEM PILLAR ]</span></div>
+        <h3><span class="i18n" data-en="The other half of sovereignty" data-ru="Вторая половина суверенитета">The other half of sovereignty</span></h3>
+        <p><span class="i18n" data-en="True sovereignty needs two things: a bank no one can freeze, and a browser no one can block. This is the second pillar." data-ru="Настоящему суверенитету нужны две вещи: банк, который нельзя заморозить, и браузер, который нельзя заблокировать. Это вторая опора.">True sovereignty needs two things: a bank no one can freeze, and a browser no one can block. This is the second pillar.</span></p>
+      </div></div>
+    </div>
+
+    <div class="terminal-box reveal">
+      <div class="term-header"><span class="i18n" data-en="// CURRENT STATUS" data-ru="// ТЕКУЩИЙ СТАТУС">// CURRENT STATUS</span></div>
+      <div class="step-row">
+        <div class="step-num">→</div>
+        <div class="step-text"><h4><span class="i18n" data-en="Late MVP — in internal optimisation and security hardening" data-ru="Поздний MVP — внутренняя оптимизация и усиление безопасности">Late MVP — in internal optimisation and security hardening</span></h4><p><span class="i18n" data-en="Focus right now: finalising the direct-to-contract resolution engine, optimising IPFS gateway handshakes, and preparing for public beta. Want early access? Leave your contact and you'll be first in line." data-ru="Сейчас в фокусе: финализация движка прямого разрешения через контракт, оптимизация рукопожатий IPFS-шлюзов и подготовка к публичной бете. Хотите ранний доступ? Оставьте контакт — будете первыми.">Focus right now: finalising the direct-to-contract resolution engine, optimising IPFS gateway handshakes, and preparing for public beta. Want early access? Leave your contact and you'll be first in line.</span></p></div>
+      </div>
+      <div class="btn-group"><a href="mailto:wadyas@gmail.com?subject=SovereignWeb3 Browser" class="btn btn-primary"><span class="i18n" data-en="Join the beta waitlist →" data-ru="Записаться в бету →">Join the beta waitlist →</span></a></div>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text-muted);margin-top:24px;line-height:1.8">
+        // Contact: wadyas@gmail.com · support@sovereignbank.pw<br>
+        // Subject line must be "SovereignWeb3 Browser" or your email may go to spam.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SOVEREIGN ===================== -->
+<section class="view" id="sovereign">
+  <div class="container">
+    <div class="reveal"><span class="badge"><span class="i18n" data-en="In Active Development" data-ru="В активной разработке">In Active Development</span></span></div>
+    <h1 class="reveal"><span class="i18n" data-en="Your smartphone is not yours. <span>Sovereign gives it back.</span>" data-ru="Ваш смартфон вам не принадлежит. <span>Sovereign возвращает его вам.</span>">Your smartphone is not yours. <span>Sovereign gives it back.</span></span></h1>
+    <p class="lead-text reveal"><span class="i18n" data-en="Three real, kernel-isolated spaces inside one phone — <b>Citizen, Human, Sovereign</b> — each with its own apps, keys, networks and visibility. Not a sandbox. Not a clone. Operating-system-level separation." data-ru="Три реальных, изолированных на уровне ядра пространства в одном телефоне — <b>Гражданин, Человек, Суверен</b> — у каждого свои приложения, ключи, сети и видимость. Не песочница. Не клон. Разделение на уровне операционной системы.">Three real, kernel-isolated spaces inside one phone — <b>Citizen, Human, Sovereign</b> — each with its own apps, keys, networks and visibility. Not a sandbox. Not a clone. Operating-system-level separation.</span></p>
+    <div class="btn-group reveal">
+      <a href="#buy-sovereign" class="btn btn-primary"><span class="i18n" data-en="Become a founding sponsor" data-ru="Стать founding-спонсором">Become a founding sponsor</span></a>
+      <a href="https://github.com/VladislavShter/SOVEREIGN" target="_blank" rel="noopener" class="btn btn-ghost"><span class="i18n" data-en="Read the manifesto" data-ru="Читать манифест">Read the manifesto</span></a>
+    </div>
+
+    <h2 class="section-title reveal"><span class="i18n" data-en="A flashlight app knows <span>your gait.</span>" data-ru="Приложение-фонарик знает <span>вашу походку.</span>">A flashlight app knows <span>your gait.</span></span></h2>
+    <div class="bento-grid">
+      <div class="bento-card large reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ THE TRUTH ]" data-ru="[ ПРАВДА ]">[ THE TRUTH ]</span></div>
+        <h3><span class="i18n" data-en="A digital twin you can't see or delete" data-ru="Цифровой двойник, который вы не видите и не можете удалить">A digital twin you can't see or delete</span></h3>
+        <p><span class="i18n" data-en="A simple flashlight app harvests your location, your Wi-Fi map, your device IDs, even your movement fingerprint. A banking app collects far more. All of it builds a model of you that you never agreed to. The kitchen rule is simple: raw meat doesn't share a shelf with cooked food. The digital world forgot this — Sovereign brings the discipline back." data-ru="Простой фонарик собирает вашу геолокацию, карту Wi-Fi, идентификаторы устройства и даже отпечаток вашей походки. Банковское приложение — намного больше. Всё это строит вашу модель, на которую вы не давали согласия. Правило кухни простое: сырое мясо не лежит на одной полке с готовой едой. Цифровой мир забыл об этом — Sovereign возвращает дисциплину.">A simple flashlight app harvests your location, your Wi-Fi map, your device IDs, even your movement fingerprint. A banking app collects far more. All of it builds a model of you that you never agreed to. The kitchen rule is simple: raw meat doesn't share a shelf with cooked food. The digital world forgot this — Sovereign brings the discipline back.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ NO ROOT ]" data-ru="[ БЕЗ ROOT ]">[ NO ROOT ]</span></div>
+        <h3><span class="i18n" data-en="One-button install" data-ru="Установка в одну кнопку">One-button install</span></h3>
+        <p><span class="i18n" data-en="No root, no custom ROM, no flashing. Real OS-level isolation on a phone you already own." data-ru="Без root, без кастомной прошивки, без перепрошивки. Настоящая изоляция на уровне ОС на телефоне, который у вас уже есть.">No root, no custom ROM, no flashing. Real OS-level isolation on a phone you already own.</span></p>
+      </div></div>
+    </div>
+
+    <h2 class="section-title reveal"><span class="i18n" data-en="Three spaces. <span>One phone.</span>" data-ru="Три пространства. <span>Один телефон.</span>">Three spaces. <span>One phone.</span></span></h2>
+    <div class="bento-grid">
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ CITIZEN ]" data-ru="[ ГРАЖДАНИН ]">[ CITIZEN ]</span></div>
+        <h3><span class="i18n" data-en="The visible you" data-ru="Видимый вы">The visible you</span></h3>
+        <p><span class="i18n" data-en="Government, banking and marketplace apps work in full. The state sees an ordinary citizen with an ordinary phone — no suspicion, no blocks. Sovereign just shows you what they're doing." data-ru="Госуслуги, банки и маркетплейсы работают полноценно. Государство видит обычного гражданина с обычным телефоном — без подозрений и блокировок. Sovereign просто показывает вам, что они делают.">Government, banking and marketplace apps work in full. The state sees an ordinary citizen with an ordinary phone — no suspicion, no blocks. Sovereign just shows you what they're doing.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ HUMAN ]" data-ru="[ ЧЕЛОВЕК ]">[ HUMAN ]</span></div>
+        <h3><span class="i18n" data-en="Your private life" data-ru="Ваша личная жизнь">Your private life</span></h3>
+        <p><span class="i18n" data-en="A full profile with its own storage, keys and network stack. Personal messengers, email, browsing — isolated at OS level. Citizen cannot read a single file from Human." data-ru="Полноценный профиль со своим хранилищем, ключами и сетевым стеком. Личные мессенджеры, почта, браузинг — изолированы на уровне ОС. «Гражданин» не может прочитать ни одного файла из «Человека».">A full profile with its own storage, keys and network stack. Personal messengers, email, browsing — isolated at OS level. Citizen cannot read a single file from Human.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ SOVEREIGN ]" data-ru="[ СУВЕРЕН ]">[ SOVEREIGN ]</span></div>
+        <h3><span class="i18n" data-en="Your inner core" data-ru="Ваше внутреннее ядро">Your inner core</span></h3>
+        <p><span class="i18n" data-en="An encrypted enclave with a second key layer. No icon, no index. In Veil mode it's cryptographically indistinguishable from random data — its existence can't be proven." data-ru="Зашифрованный анклав со вторым слоем ключей. Без иконки, без индекса. В режиме «Вуаль» он криптографически неотличим от случайных данных — его существование невозможно доказать.">An encrypted enclave with a second key layer. No icon, no index. In Veil mode it's cryptographically indistinguishable from random data — its existence can't be proven.</span></p>
+      </div></div>
+    </div>
+
+    <h2 class="section-title reveal"><span class="i18n" data-en="Privacy you can <span>see and control.</span>" data-ru="Приватность, которую можно <span>видеть и контролировать.</span>">Privacy you can <span>see and control.</span></span></h2>
+    <div class="bento-grid">
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ X-RAY ]" data-ru="[ РЕНТГЕН ]">[ X-RAY ]</span></div>
+        <h3><span class="i18n" data-en="X-ray of digital life" data-ru="Рентген цифровой жизни">X-ray of digital life</span></h3>
+        <p><span class="i18n" data-en="A live graph of every app's network connections. See the flashlight pinging analytics, the bank firing dozens of requests an hour while locked. A weekly plain-language report." data-ru="Живой граф сетевых соединений каждого приложения. Видно, как фонарик стучится в аналитику, а банк шлёт десятки запросов в час даже при заблокированном экране. Еженедельный отчёт простым языком.">A live graph of every app's network connections. See the flashlight pinging analytics, the bank firing dozens of requests an hour while locked. A weekly plain-language report.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ COMPASS ]" data-ru="[ КОМПАС ]">[ COMPASS ]</span></div>
+        <h3><span class="i18n" data-en="One-glance threat light" data-ru="Индикатор угрозы одним взглядом">One-glance threat light</span></h3>
+        <p><span class="i18n" data-en="Green / yellow / red in the status bar, driven by analysis of hundreds of signals. No jargon — calm, check, or look closer." data-ru="Зелёный / жёлтый / красный в строке состояния на основе анализа сотен сигналов. Без жаргона — спокойно, проверьте или присмотритесь.">Green / yellow / red in the status bar, driven by analysis of hundreds of signals. No jargon — calm, check, or look closer.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ PER-APP VPN + DNS ]" data-ru="[ VPN + DNS НА КАЖДОЕ ПРИЛОЖЕНИЕ ]">[ PER-APP VPN + DNS ]</span></div>
+        <h3><span class="i18n" data-en="One phone, three routes" data-ru="Один телефон, три маршрута">One phone, three routes</span></h3>
+        <p><span class="i18n" data-en="Government apps go direct, messengers via WireGuard, crypto via Tor. Separate DNS per profile. Isolated clipboard between spaces." data-ru="Госприложения — напрямую, мессенджеры — через WireGuard, крипта — через Tor. Отдельный DNS для каждого профиля. Изолированный буфер обмена между пространствами.">Government apps go direct, messengers via WireGuard, crypto via Tor. Separate DNS per profile. Isolated clipboard between spaces.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ THE VEIL ]" data-ru="[ ВУАЛЬ ]">[ THE VEIL ]</span></div>
+        <h3><span class="i18n" data-en="Deniable encryption" data-ru="Отрицаемое шифрование">Deniable encryption</span></h3>
+        <p><span class="i18n" data-en="When Sovereign is veiled, even forensic tools see free space, not an encrypted volume. Plus freeze-on-gesture and a duress mode for coercion." data-ru="Когда «Суверен» под вуалью, даже криминалистические инструменты видят свободное место, а не зашифрованный том. Плюс заморозка по жесту и режим принуждения.">When Sovereign is veiled, even forensic tools see free space, not an encrypted volume. Plus freeze-on-gesture and a duress mode for coercion.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ LOCAL AI ]" data-ru="[ ЛОКАЛЬНЫЙ ИИ ]">[ LOCAL AI ]</span></div>
+        <h3><span class="i18n" data-en="Sovereign Whisper" data-ru="Sovereign Whisper">Sovereign Whisper</span></h3>
+        <p><span class="i18n" data-en="An on-device AI (Gemma / Llama / Qwen) for translating, summarising and searching your vault — without a single outgoing packet. The privacy counterpart to Egregor." data-ru="ИИ на устройстве (Gemma / Llama / Qwen) для перевода, резюмирования и поиска в вашем хранилище — без единого исходящего пакета. Приватный двойник Эгрегора.">An on-device AI (Gemma / Llama / Qwen) for translating, summarising and searching your vault — without a single outgoing packet. The privacy counterpart to Egregor.</span></p>
+      </div></div>
+      <div class="bento-card reveal"><div class="content-wrapper">
+        <div class="mono-label"><span class="i18n" data-en="[ QUANTUM VAULT ]" data-ru="[ КВАНТОВОЕ ХРАНИЛИЩЕ ]">[ QUANTUM VAULT ]</span></div>
+        <h3><span class="i18n" data-en="Post-quantum ready" data-ru="Готовность к постквантовой эре">Post-quantum ready</span></h3>
+        <p><span class="i18n" data-en="CRYSTALS-Kyber and Dilithium (NIST-standardised) on top of AES — built to survive the &quot;store now, decrypt later&quot; era." data-ru="CRYSTALS-Kyber и Dilithium (стандарт NIST) поверх AES — чтобы пережить эпоху «сохрани сейчас, расшифруй потом».">CRYSTALS-Kyber and Dilithium (NIST-standardised) on top of AES — built to survive the "store now, decrypt later" era.</span></p>
+      </div></div>
+    </div>
+
+    <h2 class="section-title reveal" id="buy-sovereign"><span class="i18n" data-en="One-time. Lifetime. <span>No subscriptions.</span>" data-ru="Разово. Навсегда. <span>Без подписок.</span>">One-time. Lifetime. <span>No subscriptions.</span></span></h2>
+    <p class="lead-text reveal"><span class="i18n" data-en="Sovereign is in active development — the pricing below is the planned launch structure. Founding sponsors get in early on preferential terms." data-ru="Sovereign в активной разработке — цены ниже это планируемая структура запуска. Founding-спонсоры входят раньше на льготных условиях.">Sovereign is in active development — the pricing below is the planned launch structure. Founding sponsors get in early on preferential terms.</span></p>
+    <div class="pricing-grid">
+      <div class="price-card reveal"><div class="price-inner">
+        <div class="p-name">Standard</div>
+        <div class="p-price"><span>$</span>199</div>
+        <div class="p-sub"><span class="i18n" data-en="planned · lifetime" data-ru="планируется · навсегда">planned · lifetime</span></div>
+        <ul class="p-list">
+          <li><span class="i18n" data-en="Citizen + Human architecture" data-ru="Архитектура «Гражданин + Человек»">Citizen + Human architecture</span></li>
+          <li><span class="i18n" data-en="Basic isolation (VPN, DNS, vault, freeze)" data-ru="Базовая изоляция (VPN, DNS, хранилище, заморозка)">Basic isolation (VPN, DNS, vault, freeze)</span></li>
+          <li><span class="i18n" data-en="X-Ray, Compass, Scenarios" data-ru="Рентген, Компас, Сценарии">X-Ray, Compass, Scenarios</span></li>
+          <li><span class="i18n" data-en="Topology View" data-ru="Топологический вид">Topology View</span></li>
+          <li>Free updates forever</li>
+        </ul>
+      </div></div>
+      <div class="price-card premium reveal"><div class="price-inner">
+        <div class="p-name">Premium</div>
+        <div class="p-price"><span>$</span>499</div>
+        <div class="p-sub">planned · lifetime</div>
+        <ul class="p-list">
+          <li><span class="i18n" data-en="Everything in Standard" data-ru="Всё из Standard">Everything in Standard</span></li>
+          <li><span class="i18n" data-en="Full Sovereign third profile" data-ru="Полный третий профиль «Суверен»">Full Sovereign third profile</span></li>
+          <li><span class="i18n" data-en="Local AI (Sovereign Whisper)" data-ru="Локальный ИИ (Sovereign Whisper)">Local AI (Sovereign Whisper)</span></li>
+          <li><span class="i18n" data-en="Veil, Ephemeral, Duress modes" data-ru="Режимы «Вуаль», «Эфемерный», «Принуждение»">Veil, Ephemeral, Duress modes</span></li>
+          <li><span class="i18n" data-en="Inheritance, Mesh, Identity Bridge" data-ru="Наследование, Mesh, Мост идентичности">Inheritance, Mesh, Identity Bridge</span></li>
+          <li><span class="i18n" data-en="Quantum Vault, Air Gap" data-ru="Квантовое хранилище, Air Gap">Quantum Vault, Air Gap</span></li>
+        </ul>
+      </div></div>
+      <div class="price-card reveal"><div class="price-inner">
+        <div class="p-name">Founders · first 300</div>
+        <div class="p-price"><span>$</span>999</div>
+        <div class="p-sub"><span class="i18n" data-en="crypto only (USDT / USDC)" data-ru="только крипта (USDT / USDC)">crypto only (USDT / USDC)</span></div>
+        <ul class="p-list">
+          <li><span class="i18n" data-en="Everything in Premium" data-ru="Всё из Premium">Everything in Premium</span></li>
+          <li><span class="i18n" data-en="Priority founder support" data-ru="Приоритетная поддержка от автора">Priority founder support</span></li>
+          <li><span class="i18n" data-en="Early access to new modules" data-ru="Ранний доступ к новым модулям">Early access to new modules</span></li>
+          <li><span class="i18n" data-en="Closed team channel" data-ru="Закрытый канал команды">Closed team channel</span></li>
+          <li><span class="i18n" data-en="Lifetime VIP across the ecosystem" data-ru="Пожизненный VIP во всей экосистеме">Lifetime VIP across the ecosystem</span></li>
+        </ul>
+      </div></div>
+    </div>
+    <div class="terminal-box reveal" style="margin-top:56px">
+      <div class="term-header"><span class="i18n" data-en="// BECOME A FOUNDING SPONSOR" data-ru="// СТАНЬТЕ FOUNDING-СПОНСОРОМ">// BECOME A FOUNDING SPONSOR</span></div>
+      <div class="step-row">
+        <div class="step-num">→</div>
+        <div class="step-text"><h4><span class="i18n" data-en="Back the build, lock in founder terms" data-ru="Поддержите разработку, зафиксируйте условия автора">Back the build, lock in founder terms</span></h4><p><span class="i18n" data-en="Sovereign is being built in the open. Leave your contact to join the founders' circle and get early access as modules ship." data-ru="Sovereign строится открыто. Оставьте контакт, чтобы войти в круг основателей и получать ранний доступ по мере выхода модулей.">Sovereign is being built in the open. Leave your contact to join the founders' circle and get early access as modules ship.</span></p></div>
+      </div>
+      <div class="btn-group"><a href="mailto:wadyas@gmail.com?subject=SOVEREIGN" class="btn btn-primary"><span class="i18n" data-en="Become a founding sponsor →" data-ru="Стать founding-спонсором →">Become a founding sponsor →</span></a></div>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text-muted);margin-top:24px;line-height:1.8">
+        // Contact: wadyas@gmail.com · support@sovereignbank.pw<br>
+        // Subject line must be "SOVEREIGN" or your email may go to spam.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- PHILOSOPHY (shared footer) -->
+<div class="container">
+  <div class="philosophy reveal">
+    <h2><span class="i18n" data-en="You are a subject,<br><span>not a function.</span>" data-ru="Вы — субъект,<br><span>а не функция.</span>">You are a subject,<br><span>not a function.</span></span></h2>
+    <p style="margin-top: 32px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 2px;">THE SOVEREIGN ECOSYSTEM / BUILT BY VLADISLAV SHTER</p>
+    <p style="margin-top:16px"><a href="https://github.com/VladislavShter?tab=repositories" target="_blank" rel="noopener" style="color:var(--theme-color);text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:2px">GITHUB.COM/VLADISLAVSHTER — ALL REPOSITORIES</a></p>
+  </div>
+</div>
+
+<script>
+  // Hyper-saturated themes — colors per user request
+  const themes = {
+    egregor:   { color: '#9EFF00', glow: 'rgba(158, 255, 0, 0.35)',  grad: 'linear-gradient(135deg, #9EFF00, #00E676)' },
+    browser:   { color: '#00F0FF', glow: 'rgba(0, 240, 255, 0.35)',  grad: 'linear-gradient(135deg, #00F0FF, #0055FF)' },
+    sovereign: { color: '#00FFC2', glow: 'rgba(0, 255, 194, 0.35)',  grad: 'linear-gradient(135deg, #00FFC2, #00B3FF)' }
+  };
+
+  const buttons = document.querySelectorAll('.nav-btn');
+  const views = document.querySelectorAll('.view');
+  const root = document.documentElement;
+
+  function applyTheme(target){
+    root.style.setProperty('--theme-color', themes[target].color);
+    root.style.setProperty('--theme-glow', themes[target].glow);
+    root.style.setProperty('--theme-gradient', themes[target].grad);
+  }
+
+  function switchTo(target){
+    if(!themes[target]) target = 'egregor';
+    buttons.forEach(b => b.classList.toggle('active', b.getAttribute('data-target') === target));
+    views.forEach(v => {
+      v.classList.remove('active');
+      v.querySelectorAll('.reveal').forEach(el => el.classList.remove('active'));
+    });
+    document.getElementById(target).classList.add('active');
+    applyTheme(target);
+    if (location.hash.slice(1) !== target) history.replaceState(null, '', '#' + target);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(initScrollReveal, 100);
+  }
+
+  buttons.forEach(btn => btn.addEventListener('click', () => switchTo(btn.getAttribute('data-target'))));
+
+  // Mouse spotlight on cards
+  const handleOnMouseMove = e => {
+    const target = e.currentTarget;
+    const rect = target.getBoundingClientRect();
+    target.style.setProperty("--mouse-x", `${e.clientX - rect.left}px`);
+    target.style.setProperty("--mouse-y", `${e.clientY - rect.top}px`);
+  };
+  function bindSpotlight(){
+    document.querySelectorAll(".bento-card").forEach(card => { card.onmousemove = handleOnMouseMove; });
+  }
+
+  // Copy wallet
+  function copyToClipboard(elementId, btn) {
+    const text = document.getElementById(elementId).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const originalText = btn.innerText;
+      btn.innerText = "COPIED ✓";
+      btn.style.background = "#fff"; btn.style.color = "#000";
+      setTimeout(() => { btn.innerText = originalText; btn.style.background = "var(--theme-color)"; }, 2000);
+    });
+  }
+
+  // Scroll reveal
+  let revealObserver;
+  function initScrollReveal() {
+    if (revealObserver) revealObserver.disconnect();
+    const reveals = document.querySelectorAll('.view.active .reveal, .philosophy.reveal');
+    revealObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) { entry.target.classList.add('active'); observer.unobserve(entry.target); }
+      });
+    }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
+    reveals.forEach(r => revealObserver.observe(r));
+  }
+
+  // ---- Localization RU/EN ----
+  let currentLang = 'ru';
+  function applyLang(lang){
+    currentLang = lang;
+    document.documentElement.lang = lang;
+    document.querySelectorAll('.i18n, [data-ru]').forEach(el => {
+      const val = el.getAttribute('data-' + lang);
+      if (val !== null) el.innerHTML = val;
+    });
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-lang') === lang));
+    try { localStorage.setItem('eg_lang', lang); } catch(e){}
+  }
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.addEventListener('click', () => applyLang(b.getAttribute('data-lang')));
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    bindSpotlight();
+    let saved = 'ru';
+    try { saved = localStorage.getItem('eg_lang') || 'ru'; } catch(e){}
+    applyLang(saved);
+    const initial = location.hash.slice(1);
+    if (themes[initial]) switchTo(initial); else { applyTheme('egregor'); initScrollReveal(); }
+  });
+</script>
+</body>
+</html>
