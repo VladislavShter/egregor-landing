@@ -303,8 +303,8 @@
 <div class="noise-overlay"></div>
 
 <div class="lang-switch">
-  <button class="lang-btn" data-lang="en">EN</button>
-  <button class="lang-btn active" data-lang="ru">RU</button>
+  <button class="lang-btn active" data-lang="en">EN</button>
+  <button class="lang-btn" data-lang="ru">RU</button>
 </div>
 
 <nav>
@@ -785,7 +785,7 @@
   window.addEventListener('DOMContentLoaded', () => {
     bindSpotlight();
     let saved = 'ru';
-    try { saved = localStorage.getItem('eg_lang') || 'ru'; } catch(e){}
+    try { saved = localStorage.getItem('eg_lang') || 'en'; } catch(e){}
     applyLang(saved);
     const initial = location.hash.slice(1);
     if (themes[initial]) switchTo(initial); else { applyTheme('egregor'); initScrollReveal(); }
