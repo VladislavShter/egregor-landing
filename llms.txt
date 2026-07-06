@@ -1,0 +1,25 @@
+# The Sovereign Ecosystem
+
+> s0vereign.pw is the home of a small, independent ecosystem of digital-sovereignty
+> tools built by a single founder, Vladislav Shter. Everything here is local-first,
+> works without cloud lock-in, and is sold as a one-time lifetime license paid in
+> crypto (USDT / USDC). Three products: Egregor (a desktop multi-AI consilium),
+> SovereignWeb3 Browser (a Web3 browser), and Sovereign (an Android privacy suite).
+> Shared philosophy: you are a subject, not a function — your data and your tools
+> belong to you.
+
+## Products
+- [Egregor — Multi-AI Consilium](https://s0vereign.pw/#egregor): A desktop app that orchestrates 12+ frontier AI models (Claude, GPT, Gemini, DeepSeek and more via OpenRouter) into one collaborative council that debates, criticises and refines each other's answers — with Anti-Groupthink, a Confidence Map and a Code-Review pipeline. Runs on your own machine; your data never leaves it. You use your own OpenRouter API key (cents per task). One-time license.
+- [Sovereign — Android privacy suite](https://s0vereign.pw/#sovereign): Splits one phone into three OS-isolated spaces — Citizen, Human and Sovereign — using standard Android work-profile and enclave mechanisms, without root and without the cloud. Includes app-surveillance X-Ray, a post-quantum encrypted vault, an offline on-device AI (Sovereign Whisper) and defensive tools (duress wipe, hidden Veil vault, Mesh, Air Gap). Shipped as an installable .apk, delivered by email after purchase.
+- [SovereignWeb3 Browser](https://s0vereign.pw/#browser): A Web3-native browser built around the same sovereignty principles — no DNS intermediaries, no middlemen, no address spoofing. Early stage.
+
+## Source & docs
+- [Sovereign on GitHub](https://github.com/VladislavShter/SOVEREIGN): README, license, release notes and issue tracker for the Android privacy suite.
+- [Egregor on GitHub](https://github.com/VladislavShter/Egregor): Repository for the multi-AI consilium.
+
+## How to buy
+- Payment is in USDT / USDC (stablecoins) on Ethereum (ERC-20) or Tron (TRC-20). You pay first, then receive your license key, download link and manual by email. No subscriptions, no intermediaries, no KYC. Purchase panels are on each product's section of the site.
+
+## About
+- Founder: Vladislav Shter — a solo builder. Tagline: "Created solo, against inevitability."
+- Philosophy: digital sovereignty and privacy as a personal principle — local-first software, no cloud dependency, no vendor lock-in, and honest, non-overstated marketing.
